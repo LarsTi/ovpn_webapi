@@ -13,3 +13,11 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Ignore swapfile
+*.swp
+# Ignore cnf files
+*.cnf
+
+# Ignore .sq3 files, as they may contain sensitive data
+*.sq3
