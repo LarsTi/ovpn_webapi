@@ -12,5 +12,6 @@ func main(){
 	ca := db.loadCA()
 	ca.ca.WriteFileCert()
 	//ca.ca.WriteCRL()
-	//ca.checkServer()
+	ca.checkServer()
+	ca.createCRL(db.getRevokedCerts())
 }

@@ -59,6 +59,10 @@ func (db *DB) getSerialOld() (serial int64){
 	}
 	return crt.Serial
 }
+func (db *DB) getRevokedCerts()(revokedCerts []Certificate){
+	db.conn.Where("revoked = ?", true).Find(&revokedCerts)
+	return revokedCerts
+}
 func (db *DB) writeCert(cert *Certificate){
 	if cert == nil {
 		log.Println("Certificate is not bound!")

@@ -14,7 +14,8 @@ import(
 	"os"
 	"io"
 )
-func createCA(cn string)(cert *Certificate){
+
+func createCA(cn string)(retCert *Certificate){
 	log.Printf("Creating CA with common Name %s", cn)
 	//4096 Bit Keys
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -36,57 +37,54 @@ func createCA(cn string)(cert *Certificate){
 		BasicConstraintsValid: true,
 	}
 
-	pub := &priv.PublicKey
-	ca_b, err := x509.CreateCertificate(rand.Reader, ca, ca, pub, priv)
-	if err != nil {
-		log.Fatalf("create ca failed", err)
-	}
-
-	var request bytes.Buffer
-	var privateKey bytes.Buffer
-	if err := pem.Encode(&request, &pem.Block{Type: PEMCertificateBlockType, Bytes: ca_b}); err != nil {
-		log.Fatalf("Could not read Certificate: %s", err)
-	}
-	if err := pem.Encode(&privateKey, &pem.Block{Type: PEMRSAPrivateKeyBlockType, Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
-		log.Fatalf("Could not read Private Key: %s", err)
-	}
-	log.Println("CA successfully created, not yet written to db")
-	return &Certificate{
+	retCert = &Certificate{
 		UserId: 0,
 		CN: cn,
 		Type: CertificateTypeCA,
-		Serial: ca.SerialNumber.Int64(),
-		Private: privateKey.String(),
-		Public: request.String(),
-		ValidTo: ca.NotAfter,
 	}
+	
+	retCert.createCert(ca, ca, priv, priv)
+	return retCert
 }
-func (ca *CA) createServer(cn string)(retCert *Certificate){
-	log.Printf("Creating Server with common Name %s", cn)
-	// Get CA private key
-	block, _ := pem.Decode([]byte(ca.ca.Private))
-	if block == nil {
-		log.Fatalf("failed to parse ca private key")
-	}
-
-	caKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		log.Fatalf("failed to parse ca private key: %s", err)
-	}
-
-	caCert, err := ReadCertFromPEM(ca.ca.Public)
-	if err != nil {
-		log.Fatalf("failed to parse ca cert: %v", err)
-	}
+func (ca *CA) createClient(cn string, user *User)(retCert *Certificate){
+	log.Printf("Creating Client with common Name %s", cn)
 	// Create new cert's key
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		log.Fatalf("private key cannot be created: %s", err)
 	}
 	// Prepare certificate
-	ca.SerialOld = ca.SerialOld + 1
 	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(ca.SerialOld),
+		SerialNumber: big.NewInt(ca.SerialOld + 1),
+		Subject: pkix.Name{
+			CommonName: cn,
+		},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement,
+	}
+	retCert = &Certificate{
+		UserId: user.ID,
+		CN: cn,
+		Type: CertificateTypeClient,
+	}
+	caCert, caKey := ca.getKeyAndCertCA()
+	retCert.createCert(caCert, cert, priv, caKey)
+	
+	return retCert
+}
+func (ca *CA) createServer(cn string)(retCert *Certificate){
+	log.Printf("Creating Server with common Name %s", cn)
+	// Create new cert's key
+	priv, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		log.Fatalf("private key cannot be created: %s", err)
+	}
+	// Prepare certificate
+	cert := &x509.Certificate{
+		SerialNumber: big.NewInt(ca.SerialOld + 1),
 		Subject: pkix.Name{
 			CommonName: cn,
 		},
@@ -94,38 +92,99 @@ func (ca *CA) createServer(cn string)(retCert *Certificate){
 		NotAfter:     time.Now().AddDate(10, 0, 0),
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature,
+		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment,
 	}
-
-	pub := &priv.PublicKey
-	cert_b, err := x509.CreateCertificate(rand.Reader, cert, caCert, pub, caKey)
-	if err != nil {
-		log.Fatalf("cert not created: %s", err)
-	}
-	var request bytes.Buffer
-	var privateKey bytes.Buffer
-	if err := pem.Encode(&request, &pem.Block{Type: PEMCertificateBlockType, Bytes: cert_b}); err != nil {
-		log.Fatalf("Could not read Certificate: %s", err)
-	}
-	if err := pem.Encode(&privateKey, &pem.Block{Type: PEMRSAPrivateKeyBlockType, Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
-		log.Fatalf("Could not read Private Key: %s", err)
-	}
-	
-	return &Certificate{
+	retCert = &Certificate{
 		UserId: 0,
 		CN: cn,
 		Type: CertificateTypeServer,
-		Serial: cert.SerialNumber.Int64(),
-		Private: privateKey.String(),
-		Public: request.String(),
-		ValidTo: cert.NotAfter,
 	}
+	caCert, caKey := ca.getKeyAndCertCA()
+	retCert.createCert(caCert, cert, priv, caKey)
+	
+	return retCert
+}
+func (ca *CA) getKeyAndCertCA() (caCert *x509.Certificate, caKey *rsa.PrivateKey){
+	log.Println("Accessing CA Key!")
+	// Get CA private key
+	block, _ := pem.Decode([]byte(ca.ca.Private))
+	if block == nil {
+		log.Fatalf("failed to parse ca private key")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatalf("failed to parse ca private key: %s", err)
+	}
+
+	cert, err := ReadCertFromPEM(ca.ca.Public)
+	if err != nil {
+		log.Fatalf("failed to parse ca cert: %v", err)
+	}
+	return cert, key
+}
+func (crt *Certificate) createCert(caCert, crtCert *x509.Certificate, signedKey, signingKey *rsa.PrivateKey){
+	var privateKey bytes.Buffer
+	err := pem.Encode(&privateKey, &pem.Block{Type: PEMRSAPrivateKeyBlockType, Bytes: x509.MarshalPKCS1PrivateKey(signedKey)}); 
+	if err != nil{
+		log.Fatalf("Could not read private Key of common name %s: %s", crt.CN, err)
+	}
+	crt.Private = privateKey.String()
+	crt.Serial = crtCert.SerialNumber.Int64()
+	crt.ValidTo = crtCert.NotAfter
+
+	//Signing the cert:
+	signedCert, err := x509.CreateCertificate(rand.Reader, crtCert, caCert, &signedKey.PublicKey, signingKey)
+	if err != nil {
+		log.Fatalf("Could not sign cert with common name %s: %s", crt.CN, err)
+	}
+	var signed bytes.Buffer
+	err = pem.Encode(&signed, &pem.Block{Type: PEMCertificateBlockType, Bytes: signedCert})
+	if err != nil {
+		log.Fatalf("Could not read signed Key of common name %s: %s", crt.CN, err)
+	}
+	crt.Public = signed.String()
+
+}
+
+func (ca *CA) createCRL(revoked []Certificate){
+	caCrt, key := ca.getKeyAndCertCA()
+	var revokedCertList []pkix.RevokedCertificate
+	for _, serial := range revoked {
+		revokedCert := pkix.RevokedCertificate{
+			SerialNumber:   big.NewInt(serial.Serial),
+			RevocationTime: time.Now().UTC(),
+		}
+		revokedCertList = append(revokedCertList, revokedCert)
+	}
+	crl, err := caCrt.CreateCRL(rand.Reader, key, revokedCertList, time.Now().UTC(), time.Now().Add(365*24*60*time.Minute).UTC())
+	if err != nil {
+		log.Fatalf("CRL: %s", err)
+	}
+	crlPem := pem.EncodeToMemory(&pem.Block{
+		Type:  PEMx509CRLBlockType,
+		Bytes: crl,
+	})
+
+	filename := fmt.Sprintf("/docker/data/CRL.pem")
+	log.Printf("Writing file %s", filename)
+	crlOut, err := os.Create(filename)
+	if err != nil {
+		log.Fatalf("Write File: %s", err)
+	}
+	_, err = io.WriteString(crlOut, string(crlPem[:]))
+	if err != nil {
+		log.Fatalf("Write String: %s", err)
+	}
+	crlOut.Close()
 }
 // ReadCertFromPEM decodes a PEM encoded string into a x509.Certificate.
 func ReadCertFromPEM(s string) (*x509.Certificate, error) {
 	block, _ := pem.Decode([]byte(s))
-	var cert *x509.Certificate
-	cert, _ = x509.ParseCertificate(block.Bytes)
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		log.Fatalf("Cert parse: %s", err)
+	}
 	return cert, nil
 }
 func (crt *Certificate) WriteFileCert() {
