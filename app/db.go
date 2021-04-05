@@ -63,6 +63,10 @@ func (db *DB) getRevokedCerts()(revokedCerts []Certificate){
 	db.conn.Where("revoked = ?", true).Find(&revokedCerts)
 	return revokedCerts
 }
+func (db *DB) revokeCert(cert *Certificate) {
+	cert.Revoked = true
+	db.writeCert(cert)
+}
 func (db *DB) writeCert(cert *Certificate){
 	if cert == nil {
 		log.Println("Certificate is not bound!")
