@@ -100,6 +100,8 @@ func (ca *CA) createServer(cn string)(retCert *Certificate){
 		Type: CertificateTypeServer,
 	}
 	caCert, caKey := ca.getKeyAndCertCA()
+	log.Println("Accessing CA to sign cert with commonName %s\n", retCert.CN)
+
 	retCert.createCert(caCert, cert, priv, caKey)
 	
 	return retCert
@@ -148,6 +150,7 @@ func (crt *Certificate) createCert(caCert, crtCert *x509.Certificate, signedKey,
 }
 
 func (ca *CA) createCRL(revoked []Certificate){
+	log.Printf("Accessing CA to create CRL\n")
 	caCrt, key := ca.getKeyAndCertCA()
 	var revokedCertList []pkix.RevokedCertificate
 	for _, serial := range revoked {
