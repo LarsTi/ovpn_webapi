@@ -4,5 +4,19 @@ services:
         ovpn_webapi:
                 #restart: unless-stopped
                 build: .
+                environment:
+                        - "CN_SUFFIX=vpn"
                 volumes:
+                        - "server:/docker/server"
+                        - "ccd:/docker/ccd"
                         - "./data:/docker/data"
+                ports:
+                        - "9596:8080"
+#        ovpn_server:
+#                image: jlti/ovpn_server:latest
+#                volumes:
+#                        - "server:/docker/server:ro"
+#                        - "ccd:/docker/ccd:ro"
+volumes:
+        server:
+        ccd:
