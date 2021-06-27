@@ -23,6 +23,10 @@ func RunWebApi(port int, db *DB){
 	router.HandleFunc("/api/user/{id}/access", db.loadUserAccess).Methods("GET")
 	router.HandleFunc("/api/user/{id}/access", db.createUserAccess).Methods("POST")
 	router.HandleFunc("/api/user/{id}/access/{group}", db.deleteUserAccess).Methods("DELETE")
+	
+	router.HandleFunc("/api/user/{id}/certificate", db.loadUserCertificates).Methods("GET")
+	router.HandleFunc("/api/user/{id}/certificate", db.createUserCertificate).Methods("POST")
+	router.HandleFunc("/api/user/{id}/certificate/{cert}", db.deleteUserCertificate).Methods("DELETE")
 
 	router.Use(loggingMiddleware)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))

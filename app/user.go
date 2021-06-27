@@ -31,7 +31,7 @@ func (db *DB) createUser(w http.ResponseWriter, r *http.Request){
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
 		return
 	}
-	userIn.UserId = userIn.ID
+	userIn.User = userIn.ID
 	db.conn.Save(&userIn)
 	log.Printf("User %s created with id %d\n", userIn.Name, userIn.ID)
 }
@@ -41,10 +41,14 @@ func (db *DB) updateUser(w http.ResponseWriter, r *http.Request){
 	userDb := User{}
 	json.NewDecoder(r.Body).Decode(&userIn)
 	
-	db.conn.Where("ID = ?", id).First(&userDb)
+	result := db.conn.Where("ID = ?", id).First(&userDb)
 	if (db.conn.Error != nil){
 		log.Printf("User Update error: %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
+		return
+	}else if (result.RowsAffected == 0){
+		log.Printf("User Update error (user not found)\n")
+		http.Error(w, "Wrong call", http.StatusBadRequest)
 		return
 	}
 	userDb.Name = userIn.Name
@@ -69,6 +73,11 @@ func (db *DB) deleteUser(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	//TODO: revoke Certs and correct ccd
+	db.createCCD(id)
 	log.Printf("User with id %s deleted\n", id)
 }
-
+func (db *DB) getCertsForUser(userId string) (ret []Certificate){
+	result := db.conn.Where("User = ?", userId).Find(&ret)
+	log.Printf("Found %d active Certificates for user %s\n", result.RowsAffected, userId)
+	return ret
+}

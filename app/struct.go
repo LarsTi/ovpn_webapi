@@ -18,11 +18,11 @@ const(
 )
 type User struct {
 	gorm.Model
-	UserId		uint		`json:"user"`
+	User		uint		`json:"user"`
 	Name		string		`json:"name"`
 	Surname		string		`json:"surname"`
 	Org		string		`json:"org"`
-	Mail		string		`json:"Mail"`
+	Mail		string		`json:"mail"`
 }
 type AccessGroup struct {
 	gorm.Model
@@ -32,7 +32,7 @@ type AccessGroup struct {
 }
 type Certificate struct {
 	gorm.Model
-	UserId		uint		`json:"user"`		//ref to User.ID
+	User		uint		`json:"user"`		//ref to User.ID
 	CN		string		`json:"common_name"`	//Common Name of Cert
 	Type		int		`json:"cert_type"`	//one of CertificateType...
 	Serial		int64		`json:"-"`		//Serialnumber
@@ -43,8 +43,8 @@ type Certificate struct {
 }
 type UserAccess struct{
 	gorm.Model
-	UserId		uint		`json:"user"`		//ref to User.ID
-	AccessGroup	uint		`json:"group"`		//ref to AccessGroup.ID
+	User		uint		`json:"user"`		//ref to User.ID
+	Group		uint		`json:"group"`		//ref to AccessGroup.ID
 }
 type CA struct{
 	ca		*Certificate	//CA

@@ -38,7 +38,7 @@ func createCA(cn string)(retCert *Certificate){
 	}
 
 	retCert = &Certificate{
-		UserId: 0,
+		User: 0,
 		CN: cn,
 		Type: CertificateTypeCA,
 	}
@@ -46,7 +46,8 @@ func createCA(cn string)(retCert *Certificate){
 	retCert.createCert(ca, ca, priv, priv)
 	return retCert
 }
-func (ca *CA) createClient(cn string, user *User)(retCert *Certificate){
+func (ca *CA) createClient(user *User)(retCert *Certificate){
+	cn := fmt.Sprintf("%d.%s.%s.%s", (ca.SerialOld + 1), user.Surname, user.Name, os.Getenv("CN_SUFFIX"))
 	log.Printf("Creating Client with common Name %s", cn)
 	// Create new cert's key
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -66,7 +67,7 @@ func (ca *CA) createClient(cn string, user *User)(retCert *Certificate){
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement,
 	}
 	retCert = &Certificate{
-		UserId: user.ID,
+		User: user.ID,
 		CN: cn,
 		Type: CertificateTypeClient,
 	}
@@ -95,7 +96,7 @@ func (ca *CA) createServer(cn string)(retCert *Certificate){
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement | x509.KeyUsageKeyEncipherment,
 	}
 	retCert = &Certificate{
-		UserId: 0,
+		User: 0,
 		CN: cn,
 		Type: CertificateTypeServer,
 	}
@@ -169,7 +170,7 @@ func (ca *CA) createCRL(revoked []Certificate){
 		Bytes: crl,
 	})
 
-	filename := fmt.Sprintf("/docker/data/CRL.pem")
+	filename := fmt.Sprintf("/docker/server/CRL.pem")
 	log.Printf("Writing file %s", filename)
 	crlOut, err := os.Create(filename)
 	if err != nil {
@@ -191,7 +192,7 @@ func ReadCertFromPEM(s string) (*x509.Certificate, error) {
 	return cert, nil
 }
 func (crt *Certificate) WriteFileCert() {
-	filename := fmt.Sprintf("/docker/data/%s.crt", crt.CN)
+	filename := fmt.Sprintf("/docker/server/%s.crt", crt.CN)
 	log.Printf("Writing file: %s", filename)
 	certOut, err := os.Create(filename)
 	if err != nil {
@@ -204,7 +205,7 @@ func (crt *Certificate) WriteFileCert() {
 	certOut.Close()
 }
 func (key *Certificate) WriteFileKey() {
-	filename := fmt.Sprintf("/docker/data/%s.key", key.CN)
+	filename := fmt.Sprintf("/docker/server/%s.key", key.CN)
 	log.Printf("Writing file: %s", filename)
 	keyOut, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {

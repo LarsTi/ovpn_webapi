@@ -26,9 +26,9 @@ func (db *DB) loadCA() (ca *CA){
 	log.Println("Reading CA from Database")
 	ca = &CA{}
 	ca.db = db
-	ca.ca = db.readCertByCN("root-ca")
+	ca.ca = db.readCertByCN("ca")
 	if ca.ca == nil {
-		ca.ca = createCA("root-ca")
+		ca.ca = createCA("ca")
 		ca.SerialOld = ca.ca.Serial
 		db.writeCert(ca.ca)
 	}else{

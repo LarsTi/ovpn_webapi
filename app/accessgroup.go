@@ -39,12 +39,17 @@ func (db *DB) updateAccessGroup(w http.ResponseWriter, r *http.Request){
 	agDb := AccessGroup{}
 	json.NewDecoder(r.Body).Decode(&agIn)
 	
-	db.conn.Where("ID = ?", id).First(&agDb)
+	result := db.conn.Where("ID = ?", id).First(&agDb)
 	if (db.conn.Error != nil){
 		log.Printf("AccessGroup Update error: %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
 		return
+	}else if (result.RowsAffected == 0) {
+		log.Printf("AccessGroup Update error (group not found)\n")
+		http.Error(w,"Wrong call", http.StatusBadRequest)
+		return
 	}
+
 	agDb.Name = agIn.Name
 	agDb.Subnet = agIn.Subnet
 	agDb.Mask = agIn.Mask
@@ -67,4 +72,19 @@ func (db *DB) deleteAccessGroup(w http.ResponseWriter, r *http.Request){
 	}
 	log.Printf("AccessGroup with id %s deleted\n", id)
 }
-
+func (db *DB) getAccessGroupForUser(userId string)(accessGroups []AccessGroup){
+	var ua []UserAccess
+	ag := AccessGroup{}
+	db.conn.Where("User = ?", userId).Find(&ua)
+	for _, access := range ua{
+		ag = AccessGroup{}
+		result := db.conn.Where("ID = ?", access.Group).First(&ag)
+		if result.RowsAffected == 0 {
+			log.Printf("AccessGroup %s in use, but not found\n", access.Group)
+			continue
+		}
+		accessGroups = append(accessGroups, ag)
+	}
+	log.Printf("Found %d active AccessGroups for User %s\n", len(accessGroups), userId)
+	return accessGroups
+}
