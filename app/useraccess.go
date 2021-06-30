@@ -54,13 +54,12 @@ func (db *DB) createUserAccess(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	
-	log.Printf("%T - %T\n", id, agDb.ID)
 	result = db.conn.Where("User = $1 AND Group = $2", id, agDb.ID).Find(&uaDb)
 	if (db.conn.Error != nil){
 		log.Printf("UserAccess Create error (syntax): %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
 		return
-	}else if (result.RowsAffected == 0){
+	}else if (result.RowsAffected > 0){
 		log.Printf("UserAccess Create error (group already added)\n")
 		http.Error(w, "Exists", http.StatusBadRequest)
 		return

@@ -10,8 +10,7 @@ func main(){
 	log.Println("Application startup")
 	log.Println("Please make sure, /docker/data, /docker/ccd and optional /docker/server is writable for execution user!")
 	log.Println("Checking for prototype Files")
-	checkFile("/data/server.ovpn.proto")
-	checkFile("/data/client.ovpn.proto")
+	checkFile("/docker/data/client.ovpn.proto")
 	log.Println("Finished check. Any Errors? It will not hardly fail, but i doubt it will work as intended")
 
 	db := connDB()
