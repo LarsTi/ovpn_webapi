@@ -23,6 +23,7 @@ type User struct {
 	Surname		string		`json:"surname"`
 	Org		string		`json:"org"`
 	Mail		string		`json:"mail"`
+	Passwd		string		`json:"passwd"`
 }
 type AccessGroup struct {
 	gorm.Model
