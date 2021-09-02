@@ -30,6 +30,12 @@ func RunWebApi(port int, db *DB){
 	router.HandleFunc("/api/user/{id}/certificate/{cert}", db.downloadUserCertificate).Methods("GET")
 
 	router.Use(loggingMiddleware)
+	
+	//Static content
+	staticDir := "/docker/public"
+	router.Handler(http.StripPrefix(staticDir, http.FileServer(http.Dir(staticDir))))
+
+	log.Println("Starting normal API operation!")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
 }
 func loggingMiddleware(next http.Handler) http.Handler {
