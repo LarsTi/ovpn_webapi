@@ -1,12 +1,14 @@
 'use strict';
 
-class AccessGroupLine extends React.Component {
+class UserLine extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			subnet: '',
-			name: '',
-			mask: '',
+			name: "",
+			surname: "",
+			org: "",
+			mail: "",
+			passwd: '',
 			editable: false
 		};
 		this.modify = this.modify.bind(this);
@@ -15,15 +17,17 @@ class AccessGroupLine extends React.Component {
 	modify(e) {
 		e.preventDefault();
 		if (this.state.editable){
-			if ( this.state.name === this.props.accessGroup.name
-				&& this.state.subnet === this.props.accessGroup.subnet
-				&& this.state.mask === this.props.accessGroup.mask ){
+			if ( this.state.name === this.props.user.name
+				&& this.state.surname === this.props.user.surname
+				&& this.state.org === this.props.user.org
+				&& this.state.mail === this.props.user.mail
+				&& this.state.passwd === this.props.user.passwd ){
 				//Es gab keine Änderung.
 				this.setState({editable: false });
 			}else{
 				//Updaten der Änderung ins Backend
 				// this will update entries with PUT
-				fetch(window.location.protocol + "//" + window.location.host + "/api/accessgroup/" + this.props.accessGroup.ID, {
+				fetch(window.location.protocol + "//" + window.location.host + "/api/user/" + this.props.user.ID, {
 					"method": "PUT",
 					"headers": {
 						"content-type": "application/json",
@@ -31,8 +35,12 @@ class AccessGroupLine extends React.Component {
 					},
 					"body": JSON.stringify({
 						name: this.state.name,
-						subnet: this.state.subnet,
-						mask: this.state.mask
+						surname: this.state.surname,
+						name: this.state.name,
+						org: this.state.org,
+						mail: this.state.mail,
+						passwd: this.state.passwd,
+						ID: this.props.user.ID
 					})
 				})
 					.then(response => response.json())
@@ -43,9 +51,11 @@ class AccessGroupLine extends React.Component {
 			}
 		}else{
 			this.setState({
-				name:this.props.accessGroup.name,
-				subnet: this.props.accessGroup.subnet,
-				mask: this.props.accessGroup.mask,
+				name:this.props.user.name,
+				surname: this.props.user.surname,
+				org: this.props.user.org,
+				mail: this.props.user.mail,
+				passwd: this.props.user.passwd,
 				editable: true
 			})
 		}
@@ -54,7 +64,7 @@ class AccessGroupLine extends React.Component {
 		// delete entity - DELETE
 		e.preventDefault();
 		// deletes entities
-		fetch(window.location.protocol + "//" + window.location.host + "/api/accessgroup/" + this.props.accessGroup.ID, {
+		fetch(window.location.protocol + "//" + window.location.host + "/api/user/" + this.props.user.ID, {
 			"method": "DELETE",
 			"headers": {
 			}
@@ -82,7 +92,7 @@ class AccessGroupLine extends React.Component {
 					id: "name",
 					type: "text",
 					className: "form-control",
-					placeholder: this.props.accessGroup.name,
+					placeholder: this.props.user.name,
 					readOnly: !this.state.editable,
 					required: this.state.editable,
 					value: this.state.name,
@@ -95,16 +105,16 @@ class AccessGroupLine extends React.Component {
 				"td",
 				{ className: "" },
 				React.createElement("input", {
-					name: "subnet",
-					id: "subnet",
+					name: "surname",
+					id: "surname",
 					type: "text",
 					className: "form-control",
-					placeholder: this.props.accessGroup.subnet,
+					placeholder: this.props.user.surname,
 					readOnly: !this.state.editable,
 					required: this.state.editable,
-					value: this.state.subnet,
+					value: this.state.surname,
 					onChange: function(e){
-						_that.setState({subnet: e.target.value});
+						_that.setState({surname: e.target.value});
 					}
 				})
 			),
@@ -112,16 +122,50 @@ class AccessGroupLine extends React.Component {
 				"td",
 				{ className: "" },
 				React.createElement("input", {
-					name: "mask",
-					id: "mask",
+					name: "org",
+					id: "org",
 					type: "text",
 					className: "form-control",
-					placeholder: this.props.accessGroup.mask,
+					placeholder: this.props.user.org,
 					readOnly: !this.state.editable,
 					required: this.state.editable,
-					value: this.state.mask,
+					value: this.state.org,
 					onChange: function(e){
-						_that.setState({mask: e.target.value});
+						_that.setState({org: e.target.value});
+					}
+				})
+			),
+			React.createElement(
+				"td",
+				{ className: "" },
+				React.createElement("input", {
+					name: "mail",
+					id: "mail",
+					type: "text",
+					className: "form-control",
+					placeholder: this.props.user.mail,
+					readOnly: !this.state.editable,
+					required: this.state.editable,
+					value: this.state.mail,
+					onChange: function(e){
+						_that.setState({mail: e.target.value});
+					}
+				})
+			),
+			React.createElement(
+				"td",
+				{ className: "" },
+				React.createElement("input", {
+					name: "passwd",
+					id: "passwd",
+					type: "text",
+					className: "form-control",
+					placeholder: this.props.user.passwd,
+					readOnly: !this.state.editable,
+					required: this.state.editable,
+					value: this.state.passwd,
+					onChange: function(e){
+						_that.setState({passwd: e.target.value});
 					}
 				})
 			),
@@ -159,7 +203,7 @@ class AccessGroupLine extends React.Component {
 
 	}
 }
-class AccessGroups extends React.Component {
+class User extends React.Component {
 	render() {
 		return React.createElement(
 			"table",
@@ -178,25 +222,35 @@ class AccessGroups extends React.Component {
 					React.createElement(
 						"th",
 						null,
-						"subnet"
+						"Surname"
 					),
 					React.createElement(
 						"th",
 						null,
-						"mask"
+						"Organisation"
+					),
+					React.createElement(
+						"th",
+						null,
+						"Mail"
+					),
+					React.createElement(
+						"th",
+						null,
+						"Passwd (hash)"
 					)
 				)
 			),
 			React.createElement(
 				"tbody",
 				null,
-				this.props.accessGroups && this.props.accessGroups.map(function (accessGroup) {
+				this.props.user && this.props.user.map(function (u) {
 					return React.createElement(
-						AccessGroupLine,
+						UserLine,
 						{ 
-							accessGroup: accessGroup, 
+							user: u, 
 							refresh: this.props.refresh,
-							key: accessGroup.ID
+							key: u.ID
 						}
 					);
 				}.bind(this))
@@ -211,10 +265,12 @@ class App extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			accessGroups: [],
-			subnet: '',
-			id: '',
-			mask: ''
+			user: [],
+			name: "",
+			surname: "",
+			org: "",
+			mail: "",
+			passwd: ""
 		};
 
 		this.create = this.create.bind(this);
@@ -224,7 +280,7 @@ class App extends React.Component {
 	refresh(){
 		var _this = this
 		// get all entities - GET
-		fetch(window.location.protocol + "//" + window.location.host + "/api/accessgroup", {
+		fetch(window.location.protocol + "//" + window.location.host + "/api/user", {
 			"method": "GET",
 			"headers": {
 				//    "x-rapidapi-host": "fairestdb.p.rapidapi.com",
@@ -235,7 +291,7 @@ class App extends React.Component {
 
 		}).then(function (response) {
 			_this.setState({
-				accessGroups: response
+				user: response
 			});
 		}).catch(function (err) {
 			console.log(err);
@@ -250,7 +306,7 @@ class App extends React.Component {
 		// add entity - POST
 		e.preventDefault();
 		// creates entity
-		fetch(window.location.protocol + "//" + window.location.host + "/api/accessgroup", {
+		fetch(window.location.protocol + "//" + window.location.host + "/api/user", {
 			"method": "POST",
 			"headers": {
 				"content-type": "application/json",
@@ -258,8 +314,10 @@ class App extends React.Component {
 			},
 			"body": JSON.stringify({
 				name: this.state.name,
-				subnet: this.state.subnet,
-				mask: this.state.mask
+				surname: this.state.surname,
+				org: this.state.org,
+				mail: this.state.mail,
+				passwd: this.state.passwd
 			})
 		})
 			.then(response => response.json())
@@ -278,7 +336,7 @@ class App extends React.Component {
 	}
 
 	render() {
-		var _this4 = this;
+		var _this = this;
 
 		return React.createElement(
 			"div",
@@ -292,7 +350,7 @@ class App extends React.Component {
 					React.createElement(
 						"h1",
 						{ className: "display-4 text-center" },
-						"Manage Access Groups"
+						"Manage User"
 					),
 					React.createElement(
 						"form",
@@ -300,12 +358,12 @@ class App extends React.Component {
 						React.createElement(
 							"legend",
 							{ className: "text-center" },
-							"Add-Update-Delete AccessGroup"
+							"Add-Update-Delete User"
 						),
 						React.createElement(
 							"label",
 							{ htmlFor: "name" },
-							"AccessGroup Name:",
+							"Name:",
 							React.createElement("input", {
 								name: "name",
 								id: "name",
@@ -313,39 +371,69 @@ class App extends React.Component {
 								className: "form-control",
 								value: this.state.name,
 								onChange: function onChange(e) {
-									return _this4.handleChange({ name: e.target.value });
+									return _this.handleChange({ name: e.target.value });
 								},
 								required: true
 							})
 						),
 						React.createElement(
 							"label",
-							{ htmlFor: "subnet" },
-							"AccessGroup subnet:",
+							{ htmlFor: "surname" },
+							"Surname:",
 							React.createElement("input", {
-								name: "subnet",
-								id: "subnet",
-								type: "test",
-								className: "form-control",
-								value: this.state.subnet,
-								onChange: function onChange(e) {
-									return _this4.handleChange({ subnet: e.target.value });
-								},
-								required: true
-							})
-						),
-						React.createElement(
-							"label",
-							{ htmlFor: "mask" },
-							"AccessGroup subnet mask:",
-							React.createElement("input", {
-								name: "mask",
-								id: "mask",
+								name: "surname",
+								id: "surname",
 								type: "text",
 								className: "form-control",
-								value: this.state.mask,
+								value: this.state.surname,
 								onChange: function onChange(e) {
-									return _this4.handleChange({ mask: e.target.value });
+									return _this.handleChange({ surname: e.target.value });
+								},
+								required: true
+							})
+						),
+						React.createElement(
+							"label",
+							{ htmlFor: "org" },
+							"User Organisation:",
+							React.createElement("input", {
+								name: "org",
+								id: "org",
+								type: "text",
+								className: "form-control",
+								value: this.state.org,
+								onChange: function onChange(e) {
+									return _this.handleChange({ org: e.target.value });
+								}
+							})
+						),
+						React.createElement(
+							"label",
+							{ htmlFor: "mail" },
+							"User Mail-address:",
+							React.createElement("input", {
+								name: "mail",
+								id: "mail",
+								type: "text",
+								className: "form-control",
+								value: this.state.mail,
+								onChange: function onChange(e) {
+									return _this.handleChange({ mail: e.target.value });
+								}
+							})
+						),
+						React.createElement(
+							"label",
+							{ htmlFor: "passwd" },
+							"User Passwd (hashed):",
+							React.createElement("input", {
+								name: "passwd",
+								id: "passwd",
+								type: "text",
+								className: "form-control",
+								value: this.state.passwd,
+								onChange: function onChange(e) {
+									return _this.handleChange({ passwd: e.target.value });
 								}
 							})
 						),
@@ -357,7 +445,12 @@ class App extends React.Component {
 							"Add"
 						)
 					),
-					React.createElement(AccessGroups, { accessGroups: this.state.accessGroups, refresh: this.refresh })
+					React.createElement(User, 
+						{ 
+							user: this.state.user, 
+							refresh: this.refresh 
+						}
+					)
 				)
 			)
 		);
