@@ -60,7 +60,7 @@ func (db *DB) updateAccessGroup(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	log.Printf("AccessGroup %s updated with id %d\n", agIn.Name, id)
+	log.Printf("AccessGroup %s updated with id %s\n", agIn.Name, id)
 }
 func (db *DB) deleteAccessGroup(w http.ResponseWriter, r *http.Request){
 	id := mux.Vars(r)["id"]
@@ -78,9 +78,10 @@ func (db *DB) getAccessGroupForUser(userId string)(accessGroups []AccessGroup){
 	db.conn.Where("User = ?", userId).Find(&ua)
 	for _, access := range ua{
 		ag = AccessGroup{}
-		result := db.conn.Where("ID = ?", access.Group).First(&ag)
+		log.Println(access)
+		result := db.conn.Where("ID = ?", access.Access).First(&ag)
 		if result.RowsAffected == 0 {
-			log.Printf("AccessGroup %s in use, but not found\n", access.Group)
+			log.Printf("AccessGroup %s in use, but not found\n", access.Access)
 			continue
 		}
 		accessGroups = append(accessGroups, ag)

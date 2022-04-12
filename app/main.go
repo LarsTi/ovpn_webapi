@@ -20,6 +20,8 @@ func main(){
 	
 	ca.checkServer()
 	ca.createCRL(db.getRevokedCerts())
+	
+	ca.db.writePWFile()
 
 	//this one blocks!
 	RunWebApi(8080, db)

@@ -45,7 +45,7 @@ type Certificate struct {
 type UserAccess struct{
 	gorm.Model
 	User		uint		`json:"user"`		//ref to User.ID
-	Group		uint		`json:"group"`		//ref to AccessGroup.ID
+	Access		uint		`json:"group"`		//ref to AccessGroup.ID
 }
 type CA struct{
 	ca		*Certificate	//CA

@@ -17,17 +17,9 @@ func (db *DB) loadUserCertificates(w http.ResponseWriter, r *http.Request){
 	json.NewEncoder(w).Encode(ret)
 }
 func (db *DB) createUserCertificate(w http.ResponseWriter, r *http.Request){
-	certIn := Certificate{}
 	userDb := User{}
 	id := mux.Vars(r)["id"]
 
-	json.NewDecoder(r.Body).Decode(&certIn)
-	idString := fmt.Sprintf("%d", certIn.User)
-	if (idString != id) {
-		log.Printf("User (%s) and ID (%s) field not equal, abort!\n", idString, id)
-		http.Error(w, "Wrong call", http.StatusBadRequest)
-		return
-	}
 	result := db.conn.Where("ID = ?", id).First(&userDb)
 	if (db.conn.Error != nil){
 		log.Printf("Certificate Create error (user not found): %s\n", db.conn.Error)
@@ -95,7 +87,6 @@ func (db *DB) downloadUserCertificate(w http.ResponseWriter, r *http.Request){
 		log.Printf("Error reading proto file: %s", err)
 	}
 	lines := strings.Split(string(content), "\n")
-	
 	lines = append(lines, "<ca>")
 	lines = append(lines, ca.ca.Public)
 	lines = append(lines, "</ca>")

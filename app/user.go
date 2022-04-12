@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"encoding/json"
 //	"strconv"
+	"os"
+	"io"
+	"fmt"
 
 	"github.com/gorilla/mux"
 )
@@ -75,7 +78,7 @@ func (db *DB) deleteUser(w http.ResponseWriter, r *http.Request){
 	
 	for _, cert := range db.getCertsForUser(id){
 		log.Printf("Revoking cert %s for user %s\n", cert.CN, id)
-		db.revoceCert(&cert)
+		db.revokeCert(&cert)
 	}
 	db.loadCA().createCRL(db.getRevokedCerts())
 
@@ -89,7 +92,7 @@ func (db *DB) getCertsForUser(userId string) (ret []Certificate){
 }
 func (db *DB) writePWFile(){
 	var users []User
-	db.find(&users)
+	db.conn.Find(&users)
 	file, err := os.OpenFile("/docker/server/pw", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if (err != nil){
 		log.Println(err)
@@ -98,6 +101,12 @@ func (db *DB) writePWFile(){
 	defer file.Close()
 	for _, user := range users{
 		_, err = io.WriteString(file,fmt.Sprintf("%s.%s:%s", user.Surname, user.Name, user.Passwd))
-		log.Printf("Could not write pw file for user %s.%s", user.Surname, user.Name)
+		if (err != nil) {
+			log.Printf("Could not write pw file for user %s.%s", user.Surname, user.Name)
+			log.Println(err)
+		}else{
+			log.Printf("Wrote pw file for user %s.%s", user.Surname, user.Name)
+		}
 	}
+	log.Println("Finished write of pw file")
 }

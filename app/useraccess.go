@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"io"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -43,7 +44,7 @@ func (db *DB) createUserAccess(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	
-	result = db.conn.Where("ID = ?", userIn.Group).First(&agDb)
+	result = db.conn.Where("ID = ?", userIn.Access).First(&agDb)
 	if (db.conn.Error != nil){
 		log.Printf("UserAccess Create error (accessgroup not found): %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
@@ -54,7 +55,7 @@ func (db *DB) createUserAccess(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	
-	result = db.conn.Where("User = $1 AND Group = $2", id, agDb.ID).Find(&uaDb)
+	result = db.conn.Where("User = ? AND Access = ?", id, agDb.ID).Find(&uaDb)
 	if (db.conn.Error != nil){
 		log.Printf("UserAccess Create error (syntax): %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
@@ -69,15 +70,18 @@ func (db *DB) createUserAccess(w http.ResponseWriter, r *http.Request){
 
 	db.createCCD(id)
 
-	log.Printf("UserAccess %d created with id %d\n", userIn.Group, userIn.ID)
+	log.Printf("UserAccess %d created with id %d\n", userIn.Access, userIn.ID)
 }
 func (db *DB) deleteUserAccess(w http.ResponseWriter, r *http.Request){
 	ua := UserAccess{}
-	id := mux.Vars(r)["id"]
-	group := mux.Vars(r)["group"]
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	group, _ := strconv.Atoi(mux.Vars(r)["group"])
 	log.Printf("Deleting AccessGroup %s for user %s\n", group, id)
 	
-	result := db.conn.Where("User = $1 AND Group = $2", id, group).Delete(&ua)
+	result := db.conn.Where("User = ?", id).Where("Access = ?", group).Delete(&ua)
+	log.Println(ua)
+	log.Printf("id: %T\n", id)
+	log.Printf("group: %T\n", group)
 	if (db.conn.Error != nil){
 		log.Printf("UserAccess Delete error: %s\n", db.conn.Error)
 		http.Error(w, db.conn.Error.Error(), http.StatusBadRequest)
@@ -88,7 +92,7 @@ func (db *DB) deleteUserAccess(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	
-	db.createCCD(id)
+	db.createCCD(fmt.Sprintf("%d",id))
 
 	log.Printf("UserAccess with for user %s and group %s deleted\n", id, group)
 }
