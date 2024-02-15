@@ -38,7 +38,7 @@ func (db *DB) createUserCertificate(w http.ResponseWriter, r *http.Request){
 
 	db.createCCD(id)
 
-	log.Printf("Certificate %s created for user %d\n", crt.CN, crt.User)
+	log.Printf("Certificate %s created for user %d\n", crt.CN, crt.Mail)
 }
 func (db *DB) deleteUserCertificate(w http.ResponseWriter, r *http.Request){
 	crt := Certificate{}

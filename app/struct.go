@@ -21,7 +21,7 @@ type User struct {
 	User		uint		`json:"user"`
 	Name		string		`json:"name"`
 	Surname		string		`json:"surname"`
-	Org		string		`json:"org"`
+	Org			string		`json:"org"`
 	Mail		string		`json:"mail"`
 	Passwd		string		`json:"passwd"`
 }
@@ -33,9 +33,9 @@ type AccessGroup struct {
 }
 type Certificate struct {
 	gorm.Model
-	User		uint		`json:"user"`		//ref to User.ID
-	CN		string		`json:"common_name"`	//Common Name of Cert
-	Type		int		`json:"cert_type"`	//one of CertificateType...
+	Mail		string		`json:"mail"`		
+	CN			string		`json:"common_name"`	//Common Name of Cert
+	Type		int			`json:"cert_type"`	//one of CertificateType...
 	Serial		int64		`json:"-"`		//Serialnumber
 	Private		string		`json:"-"`		//Private Key
 	Public		string		`json:"public"`		//Public Key

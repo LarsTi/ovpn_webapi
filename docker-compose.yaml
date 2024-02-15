@@ -9,7 +9,7 @@ services:
                 volumes:
                         - "server:/docker/server"
                         - "ccd:/docker/ccd"
-                        - "./data:/docker/data"
+                        - "../data:/docker/data"
                 ports:
                         - "9596:8080"
 #        ovpn_server:

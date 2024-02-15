@@ -13,18 +13,22 @@ func main(){
 	checkFile("/docker/data/client.ovpn.proto")
 	log.Println("Finished check. Any Errors? It will not hardly fail, but i doubt it will work as intended")
 
-	db := connDB()
-	db.init()
+	db := getSingleton().dbConn
+	
+	//db := connDB()
+	//db.init()
 	ca := db.loadCA()
-	ca.ca.WriteFileCert()
+	
+	getSingleton().ca.WriteFileCert()
 	
 	ca.checkServer()
 	ca.createCRL(db.getRevokedCerts())
 	
-	ca.db.writePWFile()
+	getSingleton().dbConn.writePWFile()
 
 	//this one blocks!
-	RunWebApi(8080, db)
+	RunGin(8080, db)
+	//RunWebApi(8080, db)
 }
 func checkFile(file string){
 	_, err := os.Stat(file)
