@@ -169,7 +169,7 @@ func (ca *CA) createCRL(revoked []Certificate){
 	}
 	crl, err := caCrt.CreateCRL(rand.Reader, key, revokedCertList, time.Now().UTC(), time.Now().Add(365*24*60*time.Minute).UTC())
 	if err != nil {
-		log.Fatalf("CRL: %s", err)
+		log.Printf("CRL: %s", err)
 	}
 	crlPem := pem.EncodeToMemory(&pem.Block{
 		Type:  PEMx509CRLBlockType,
@@ -180,11 +180,11 @@ func (ca *CA) createCRL(revoked []Certificate){
 	log.Printf("Writing file %s", filename)
 	crlOut, err := os.Create(filename)
 	if err != nil {
-		log.Fatalf("Write File: %s", err)
+		log.Printf("Write File: %s", err)
 	}
 	_, err = io.WriteString(crlOut, string(crlPem[:]))
 	if err != nil {
-		log.Fatalf("Write String: %s", err)
+		log.Printf("Write String: %s", err)
 	}
 	crlOut.Close()
 }
