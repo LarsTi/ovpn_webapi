@@ -40,11 +40,27 @@ func endpointCerts(router *gin.Engine, config ginkeycloak.BuilderConfig, db *DB)
 	secured_realm.POST("/", func(c *gin.Context) {
 			ginToken, _ := c.Get("token")
 			token := ginToken.(ginkeycloak.KeyCloakToken)
-			crt, err := db.loadCA().createClientForMail(token.Email)
+			crt, err := createClientForMail(token.Email)
 			if(err != nil){
 				c.JSON(http.StatusBadRequest, err.Error)
+				return
 			}
 			c.JSON(http.StatusOK, crt)
+	})
+	secured_realm.GET("/:cn",func(c *gin.Context){
+		cn := c.Param("cn")
+		ginToken, _ := c.Get("token")
+			token := ginToken.(ginkeycloak.KeyCloakToken)
+		
+		file, err := downloadCertByCN(cn, token.Email);
+		if(err != nil){
+			c.JSON(http.StatusBadRequest, err.Error)
+			return
+		}
+		c.Header("Content-Type", "text/octet-stream")
+		c.Header("Content-Disposition", fmt.Sprintf("attachment;filename=\"%s.ovpn\"", cn))
+		c.Header("Accept-Length", fmt.Sprintf("%d", len(file)))
+		c.Writer.Write([]byte(strings.Join(file, "\n")))
 	})
 }
 func RunWebApi(port int, db *DB){

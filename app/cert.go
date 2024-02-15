@@ -51,61 +51,6 @@ func createCA(cn string)(retCert *Certificate){
 
 	return retCert
 }
-func (ca *CA) createClientForMail(mail string)(retCert *Certificate, err error){
-	dbCrt := Certificate{};
-	result := ca.db.conn.Where("mail = ?", mail).Find(&dbCrt)
-	if (result.Error != nil){
-		log.Printf("Datenbank Fehler: %s", result.Error)
-		return nil, result.Error
-	}
-	cn := fmt.Sprintf("%d.%s.%s", result.RowsAffected + 1, mail, os.Getenv("CN_SUFFIX"))
-	log.Printf("Creating Client with common Name %s", cn)
-
-	priv, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		log.Fatalf("private key cannot be created: %s", err)
-	}
-
-	// Prepare certificate
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(ca.SerialOld + 1),
-		Subject: pkix.Name{
-			CommonName: cn,
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement,
-	}
-
-	retCert = &Certificate{
-		Mail: mail,
-		CN: cn,
-		Type: CertificateTypeClient,
-	}
-	caCert, caKey := ca.getKeyAndCertCA()
-	retCert.createCert(caCert, cert, priv, caKey)
-
-	result = getSingleton().dbConn.conn.Create(&retCert)
-	if(result.Error != nil){
-		log.Println(result.Error)
-	}else{
-		log.Println(result.RowsAffected)
-	}
-
-	getSingleton().dbConn.createCCD(mail)
-
-	result = getSingleton().dbConn.conn.Where("mail = ?", mail).Find(&dbCrt)
-	if (result.Error != nil){
-		log.Printf("Datenbank Fehler: %s", result.Error)
-		return nil, result.Error
-	}
-	log.Printf("%d.%s.%s", result.RowsAffected + 1, mail, os.Getenv("CN_SUFFIX"))
-
-	return retCert, nil
-
-}
 func (ca *CA) createClient(user *User)(retCert *Certificate){
 	cn := fmt.Sprintf("%d.%s.%s.%s", (ca.SerialOld + 1), user.Surname, user.Name, os.Getenv("CN_SUFFIX"))
 	log.Printf("Creating Client with common Name %s", cn)
