@@ -22,5 +22,5 @@ jobs:
       with:
         file: Dockerfile
         push: true
-        tags: ghcr.io/larsti/map:latest
+        tags: ghcr.io/larsti/ovpn_webapi:latest
         github_token: ${{ secrets.GITHUB_TOKEN }}
