@@ -20,7 +20,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
-        context: backend
+        context: "{{defaultContext}}:backend"
         file: Dockerfile
         push: true
         tags: ghcr.io/larsti/ovpn_webapi:latest
