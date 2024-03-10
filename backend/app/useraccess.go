@@ -96,15 +96,15 @@ func (db *DB) deleteUserAccess(w http.ResponseWriter, r *http.Request){
 
 	log.Printf("UserAccess with for user %s and group %s deleted\n", id, group)
 }
-func (db *DB) createCCD(userId string){
-	log.Printf("Correcting CCD files for User %s\n", userId)
-	ags := db.getAccessGroupForUser(userId)
-	certs := db.getCertsForUser(userId)
+func (db *DB) createCCD(mail string){
+	log.Printf("Correcting CCD files for User %s\n", mail)
+	
+	certs := getSingleton().dbConn.getCertsForUser(mail)
 	for _, c := range certs {
-		writeCCD(c, ags)
+		writeCCD(c)
 	}
 }
-func writeCCD(c Certificate, accessGroups []AccessGroup){
+func writeCCD(c Certificate){
 	path := fmt.Sprintf("/docker/ccd/%s", c.CN)
 	log.Printf("Writing file: %s\n", path)
 	file, err := os.Create(path)
@@ -113,7 +113,7 @@ func writeCCD(c Certificate, accessGroups []AccessGroup){
 		return
 	}
 	defer file.Close()
-	for _, ag := range accessGroups{
+	for _, ag := range getSingleton().dbConn.getAccessGroupForUser(c.Mail) {
 		_, err = io.WriteString(file, fmt.Sprintf("\n#%s\npush \"route %s %s\"\n", ag.Name, ag.Subnet, ag.Mask))
 		if (err != nil){
 			log.Println(err)

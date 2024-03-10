@@ -10,12 +10,20 @@ type singleton struct {
 	dbConn		*DB
 	dbLock 		*sync.Mutex
 	ca			*Certificate	//CA
-	SerialOld	int64		//letzte Vergebene Serial
 }
 
 var singleInstance *singleton
 
+func (singleton *singleton) getSerialOld()(serialOld int64){
+	return singleton.getDb().getSerialOld()
+}
+func (singleton *singleton) getDb()(db *DB){
+	singleton.dbLock.Lock()
+	defer singleton.dbLock.Unlock()
 
+	return singleton.dbConn
+
+}
 func getSingleton() *singleton {
     if singleInstance == nil {
 		lock.Lock()
@@ -29,10 +37,7 @@ func getSingleton() *singleton {
 			singleInstance.ca = singleInstance.dbConn.readCertByCN("ca")
 			if singleInstance.ca == nil {
 				singleInstance.ca = createCA("ca")
-				singleInstance.SerialOld = singleInstance.ca.Serial
 				singleInstance.dbConn.writeCert(singleInstance.ca)
-			}else{
-				singleInstance.SerialOld = singleInstance.dbConn.getSerialOld()
 			}
 
         } else {
