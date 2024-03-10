@@ -1,8 +1,8 @@
 FROM golang:1.19 as builder
 WORKDIR /app
-COPY ./go.mod go.mod
+COPY go.mod go.mod
 RUN go mod download
-COPY ./app /app
+COPY app /app
 RUN CGO_ENABLED=1 GOOS=linux GOFLAGS=-mod=mod go build -a -installsuffix cgo -o main .
 
 FROM debian:latest
