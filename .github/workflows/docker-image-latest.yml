@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  build:
+  build-backend:
 
     runs-on: ubuntu-latest
 
@@ -21,7 +21,7 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: backend
-        file: backend/Dockerfile
+        file: Dockerfile
         push: true
         tags: ghcr.io/larsti/ovpn_webapi:latest
         github_token: ${{ secrets.GITHUB_TOKEN }}
