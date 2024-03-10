@@ -1,0 +1,6 @@
+<p-menubar [model]="items">
+    <ng-template pTemplate="end">
+        <p-button *ngIf="isLoggedIn" label="Login" [link]="true" (onClick)="login()"></p-button>
+        <p-button *ngIf="!isLoggedIn" label="Logout" [link]="true" (onClick)="logout()"></p-button>
+    </ng-template>
+</p-menubar>
