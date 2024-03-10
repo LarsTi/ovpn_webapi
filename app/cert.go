@@ -51,38 +51,6 @@ func createCA(cn string)(retCert *Certificate){
 
 	return retCert
 }
-func (ca *CA) createClient(user *User)(retCert *Certificate){
-	cn := fmt.Sprintf("%d.%s.%s.%s", (ca.SerialOld + 1), user.Surname, user.Name, os.Getenv("CN_SUFFIX"))
-	log.Printf("Creating Client with common Name %s", cn)
-	// Create new cert's key
-	priv, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		log.Fatalf("private key cannot be created: %s", err)
-	}
-	// Prepare certificate
-	
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(ca.SerialOld + 1),
-		Subject: pkix.Name{
-			CommonName: cn,
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyAgreement,
-	}
-	
-	retCert = &Certificate{
-		Mail: user.Mail,
-		CN: cn,
-		Type: CertificateTypeClient,
-	}
-	caCert, caKey := ca.getKeyAndCertCA()
-	retCert.createCert(caCert, cert, priv, caKey)
-	
-	return retCert
-}
 func (ca *CA) createServer(cn string)(retCert *Certificate){
 	log.Printf("Creating Server with common Name %s", cn)
 	// Create new cert's key
@@ -92,7 +60,7 @@ func (ca *CA) createServer(cn string)(retCert *Certificate){
 	}
 	// Prepare certificate
 	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(ca.SerialOld + 1),
+		SerialNumber: big.NewInt(getSingleton().getSerialOld() + 1),
 		Subject: pkix.Name{
 			CommonName: cn,
 		},

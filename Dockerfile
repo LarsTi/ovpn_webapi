@@ -16,5 +16,4 @@ run mkdir -p /docker/server/ /docker/ccd /docker/data && \
 USER nobody:nogroup
 VOLUME /docker/server
 VOLUME /docker/ccd
-COPY public /docker/public
 CMD ["/docker/main"]

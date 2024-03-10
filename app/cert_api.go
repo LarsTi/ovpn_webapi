@@ -17,7 +17,7 @@ import(
 
 func createClientForMail(mail string)(retCert *Certificate, err error){
 	dbCrt := Certificate{};
-	result := getSingleton().dbConn.conn.Where("mail = ?", mail).Find(&dbCrt)
+	result := getSingleton().dbConn.conn.Where("mail = ?", mail).Last(&dbCrt)
 	if (result.Error != nil){
 		log.Printf("Datenbank Fehler: %s", result.Error)
 		return nil, result.Error
@@ -32,7 +32,7 @@ func createClientForMail(mail string)(retCert *Certificate, err error){
 
 	// Prepare certificate
 	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(getSingleton().SerialOld + 1),
+		SerialNumber: big.NewInt(getSingleton().getSerialOld() + 1),
 		Subject: pkix.Name{
 			CommonName: cn,
 		},
@@ -98,4 +98,23 @@ func downloadCertByCN(cn string, mail string)(ret []string, err error){
 	lines = append(lines, "</cert>")
 
 	return lines, nil
+}
+
+func revokeCertByCN(cn string, mail string)(err error){
+	crt := Certificate{}
+	log.Println("löschen des Certs begonnen 0")
+	result := getSingleton().dbConn.conn.Where("mail = ? AND cn = ?", mail, cn).First(&crt)
+	log.Println("löschen des Certs begonnen 1")
+	if (result.Error != nil){
+		return fmt.Errorf("Certificate Read error: %s", getSingleton().dbConn.conn.Error)
+	}else if (result.RowsAffected == 0){
+		return fmt.Errorf("Certification read error (user/certificate not found)")
+	}
+	log.Println("löschen des Certs begonnen 2")
+	getSingleton().dbConn.revokeCert(&crt)
+	getSingleton().dbConn.loadCA().createCRL(getSingleton().dbConn.getRevokedCerts())
+
+	getSingleton().dbConn.createCCD(mail)
+
+	return nil;	
 }

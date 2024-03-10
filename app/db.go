@@ -29,10 +29,10 @@ func (db *DB) loadCA() (ca *CA){
 	ca.ca = db.readCertByCN("ca")
 	if ca.ca == nil {
 		ca.ca = createCA("ca")
-		ca.SerialOld = ca.ca.Serial
+		//ca.SerialOld = ca.ca.Serial
 		db.writeCert(ca.ca)
 	}else{
-		ca.SerialOld = db.getSerialOld()
+		//ca.SerialOld = db.getSerialOld()
 	}
 	return ca
 }

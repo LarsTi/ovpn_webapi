@@ -49,7 +49,7 @@ type UserAccess struct{
 }
 type CA struct{
 	ca		*Certificate	//CA
-	SerialOld	int64		//letzte Vergebene Serial
+	//SerialOld	int64		//letzte Vergebene Serial
 	db		*DB
 }
 type DB struct {

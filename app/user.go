@@ -86,7 +86,7 @@ func (db *DB) deleteUser(w http.ResponseWriter, r *http.Request){
 	log.Printf("User with id %s deleted\n", id)
 }
 func (db *DB) getCertsForUser(userId string) (ret []Certificate){
-	result := db.conn.Where("mail = ?", userId).Find(&ret)
+	result := db.conn.Where("mail = ? and revoked = ?", userId, false).Find(&ret)
 	log.Printf("Found %d active Certificates for user %s\n", result.RowsAffected, userId)
 	return ret
 }
